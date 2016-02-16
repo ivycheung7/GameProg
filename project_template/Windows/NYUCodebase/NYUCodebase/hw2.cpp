@@ -34,7 +34,7 @@ bool collision(float r[], float b[]){
 	//Collision
 	//Paddle vs ball
 	//A
-	if ((r[0] - .25) > (b[2]- .5)){
+	if ((r[0] - .25) > (b[2] - .5)){
 		//left larger than right
 		return false;
 	}
@@ -52,23 +52,24 @@ bool collision(float r[], float b[]){
 	}
 	return true;
 }
-void DrawText(ShaderProgram *program, int fontTexture, std::string text, float size, float spacing) { 
-	float texture_size = 1.0 / 16.0f;     
-	std::vector<float> vertexData;     
-	std::vector<float> texCoordData;          
+void DrawText(ShaderProgram *program, int fontTexture, std::string text, float size, float spacing) {
+	float texture_size = 1.0 / 16.0f;
+	std::vector<float> vertexData;
+	std::vector<float> texCoordData;
 	for (int i = 0; i < text.size(); i++) {
-		float texture_x = (float)(((int)text[i]) % 16) / 16.0f; 
-		float texture_y = (float)(((int)text[i]) / 16) / 16.0f; 
+		float texture_x = (float)(((int)text[i]) % 16) / 16.0f;
+		float texture_y = (float)(((int)text[i]) / 16) / 16.0f;
 		vertexData.insert(vertexData.end(), {
-			((size + spacing) * i) + (-0.5f * size), 0.5f * size, ((size + spacing) * i) + (-0.5f * size), -0.5f * size, ((size + spacing) * i) + (0.5f * size), 0.5f * size, ((size + spacing) * i) + (0.5f * size), -0.5f * size, ((size + spacing) * i) + (0.5f * size), 0.5f * size, ((size + spacing) * i) + (-0.5f * size), -0.5f * size, });         texCoordData.insert(texCoordData.end(), { texture_x, texture_y, texture_x, texture_y + texture_size, texture_x + texture_size, texture_y, texture_x + texture_size, texture_y + texture_size, texture_x + texture_size, texture_y, texture_x, texture_y + texture_size, }); }     glUseProgram(program->programID);      
-			glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());    
-			glEnableVertexAttribArray(program->positionAttribute);    
-			glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoordData.data()); 
-			glEnableVertexAttribArray(program->texCoordAttribute);      
-			glBindTexture(GL_TEXTURE_2D, fontTexture); 
-			glDrawArrays(GL_TRIANGLES, 0, text.size() * 6); 
-			glDisableVertexAttribArray(program->positionAttribute);  
-			glDisableVertexAttribArray(program->texCoordAttribute);
+			((size + spacing) * i) + (-0.5f * size), 0.5f * size, ((size + spacing) * i) + (-0.5f * size), -0.5f * size, ((size + spacing) * i) + (0.5f * size), 0.5f * size, ((size + spacing) * i) + (0.5f * size), -0.5f * size, ((size + spacing) * i) + (0.5f * size), 0.5f * size, ((size + spacing) * i) + (-0.5f * size), -0.5f * size, });         texCoordData.insert(texCoordData.end(), { texture_x, texture_y, texture_x, texture_y + texture_size, texture_x + texture_size, texture_y, texture_x + texture_size, texture_y + texture_size, texture_x + texture_size, texture_y, texture_x, texture_y + texture_size, });
+	}     glUseProgram(program->programID);
+	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertexData.data());
+	glEnableVertexAttribArray(program->positionAttribute);
+	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoordData.data());
+	glEnableVertexAttribArray(program->texCoordAttribute);
+	glBindTexture(GL_TEXTURE_2D, fontTexture);
+	glDrawArrays(GL_TRIANGLES, 0, text.size() * 6);
+	glDisableVertexAttribArray(program->positionAttribute);
+	glDisableVertexAttribArray(program->texCoordAttribute);
 }
 
 void setup(){
@@ -86,7 +87,7 @@ void setup(){
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(0.0f, 0.3f, 0.5f, 1.0f);
-	
+
 }
 
 void processEvents(){
@@ -105,11 +106,11 @@ void render(){
 
 int main(int argc, char *argv[])
 {
-	setup();     
+	setup();
 
 	ShaderProgram program(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 	glUseProgram(program.programID);
-	
+
 	Matrix modelMatrix;
 	Matrix modelMatrixc;
 	Matrix viewMatrix;
@@ -137,13 +138,12 @@ int main(int argc, char *argv[])
 	Matrix projectionMatrix;
 	projectionMatrix.setOrthoProjection(-3.55, 3.55, -2.0f, 2.0f, -1.0f, 1.0f);
 	SDL_Event event;
-	//int winner = 0;
 	while (!done) {
-		
+
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		processEvents();         
-		update();         
+		processEvents();
+		update();
 		render();
 
 		program.setModelMatrix(modelMatrix);
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
 		//Ball 
 
 		if ((collision(verticesP1, verticesball)) || (collision(verticesP2, verticesball))){
-			ballSpeed *=-1;
+			ballSpeed *= -1;
 		}
 		for (int i = 0; i < 12; i++){
 			if (i % 2 != 0){
@@ -289,11 +289,10 @@ int main(int argc, char *argv[])
 
 
 			//Resets ball
-	/*		for (int i = 0; i < 12; i++){
+			for (int i = 0; i < 12; i++){
 				verticesball[i] = startPos[i];
 			}
 			angle = rand() % 360;
-	*/
 		}
 		//Check Right
 		if ((verticesball[2] + ballSpeed *elapsed) >= 6.0){
@@ -301,11 +300,11 @@ int main(int argc, char *argv[])
 			//Give points to left player
 			DrawText(&program, font, "Player One won", 0.25, 0.0);
 
-		/*	for (int i = 0; i < 12; i++){
+			for (int i = 0; i < 12; i++){
 				verticesball[i] = startPos[i];
 			}
 			angle = rand() % 360;
-		*/	
+
 		}
 
 		//Y 
@@ -317,22 +316,16 @@ int main(int argc, char *argv[])
 		if ((verticesball[1] + ballSpeed * elapsed * sin(angle)) <= -2.0){
 			angle *= -1;
 		}
-		//if (winner == 1){
-		//	DrawText(&program, font, "Player One won", 0.25, 0.0);
-		//}
-		//else if (winner == 2){
-		//	DrawText(&program, font, "Player Two won", 0.25, 0.0);
-		//	time_t a(300);
-		//}
+
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
 				done = true;
 			}
-			
+
 		}
 		SDL_GL_SwapWindow(displayWindow);
-	}	
-	
+	}
+
 	SDL_Quit();
 	return 0;
 
