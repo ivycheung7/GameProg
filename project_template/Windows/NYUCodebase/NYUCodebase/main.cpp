@@ -89,20 +89,6 @@ void setup(){
 	
 }
 
-void processEvents(){
-	SDL_Event event;
-
-
-
-}
-
-void update(){
-
-}
-void render(){
-
-}
-
 int main(int argc, char *argv[])
 {
 	setup();     
@@ -141,10 +127,6 @@ int main(int argc, char *argv[])
 	while (!done) {
 		
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		processEvents();         
-		update();         
-		render();
 
 		program.setModelMatrix(modelMatrix);
 		program.setViewMatrix(viewMatrix);
