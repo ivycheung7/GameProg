@@ -102,7 +102,7 @@ public:
 		directionY = -1.0f;
 		isAlive = true;
 		active = true;
-		textureID = LoadTexture("onigiri.png");
+		textureID = LoadTexture("ass.png");
 	}
 
 	void updateImage(ShaderProgram * program, float* texVert){
