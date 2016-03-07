@@ -132,12 +132,17 @@ int main(int argc, char *argv[])
 	const Uint8 *keys = SDL_GetKeyboardState(NULL);
 	bool done = false;
 	float speed = 2.0f;
-	float ballSpeed = 2.0f;
+	float ballSpeed = 5.0f;
 	//int angle = 1;
 	float angle = rand() % 360;
+	bool leftPaddleCollide = false;
+	bool rightPaddleCollide = false;
+
+
 	Matrix projectionMatrix;
 	projectionMatrix.setOrthoProjection(-3.55, 3.55, -2.0f, 2.0f, -1.0f, 1.0f);
 	SDL_Event event;
+	//int winner = 0;
 	while (!done) {
 
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -289,10 +294,11 @@ int main(int argc, char *argv[])
 
 
 			//Resets ball
-			for (int i = 0; i < 12; i++){
-				verticesball[i] = startPos[i];
+			/*		for (int i = 0; i < 12; i++){
+			verticesball[i] = startPos[i];
 			}
 			angle = rand() % 360;
+			*/
 		}
 		//Check Right
 		if ((verticesball[2] + ballSpeed *elapsed) >= 6.0){
@@ -300,11 +306,11 @@ int main(int argc, char *argv[])
 			//Give points to left player
 			DrawText(&program, font, "Player One won", 0.25, 0.0);
 
-			for (int i = 0; i < 12; i++){
-				verticesball[i] = startPos[i];
+			/*	for (int i = 0; i < 12; i++){
+			verticesball[i] = startPos[i];
 			}
 			angle = rand() % 360;
-
+			*/
 		}
 
 		//Y 
@@ -316,7 +322,13 @@ int main(int argc, char *argv[])
 		if ((verticesball[1] + ballSpeed * elapsed * sin(angle)) <= -2.0){
 			angle *= -1;
 		}
-
+		//if (winner == 1){
+		//	DrawText(&program, font, "Player One won", 0.25, 0.0);
+		//}
+		//else if (winner == 2){
+		//	DrawText(&program, font, "Player Two won", 0.25, 0.0);
+		//	time_t a(300);
+		//}
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
 				done = true;

@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 #include <math.h>
-#include <SDL_mixer.h>
+
 
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
@@ -143,7 +143,6 @@ public:
 
 	}
 };
-
 
 //I was too lazy to make getX and setX methods that I decided to put functions in Entity instead
 //class Player : public Entity{
@@ -326,6 +325,7 @@ int main(int argc, char *argv[])
 	Matrix gameOver;
 	Matrix win;
 	int startScreen = 0;
+
 
 	while (!done) {
 
