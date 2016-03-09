@@ -102,9 +102,8 @@ public:
 		directionY = -1.0f;
 		isAlive = true;
 		active = true;
-		textureID = LoadTexture("ass.png");
+		textureID = LoadTexture("onigiri.png");
 	}
-
 	void updateImage(ShaderProgram * program, float* texVert){
 		if (active){
 			if (!isAlive){
@@ -269,8 +268,20 @@ int main(int argc, char *argv[])
 	float startPos[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f };
 	float texCoords[] = { 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0 };
 
-	//vector<Entity> bullets;
-	//vector<Matrix> bulletMatrixVec;
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
+	//Frequency, format, channels, chunksize
+	
+	//Loading sound
+	//Mix_Chunk *someSound; 
+	//someSound = Mix_LoadWAV("some_sound.wav"); // Loading a sound.
+
+	//Mix_PlayChannel(-1, someSound, 0);
+	//Channel, chunk, loop
+
+	Mix_Music *music;
+	music = Mix_LoadMUS("johncena.wav");
+	//The time is now
+	Mix_PlayMusic(music, -1);
 
 	//Player
 	Entity magikarp;
@@ -396,6 +407,7 @@ int main(int argc, char *argv[])
 			processEvents();
 			update();
 			render();
+
 			float ticks = (float)SDL_GetTicks() / 7000.0;
 			float elapsed = ticks - lastFrameTicks;
 			lastFrameTicks = ticks;
@@ -568,6 +580,8 @@ int main(int argc, char *argv[])
 		SDL_GL_SwapWindow(displayWindow);
 	}
 
+//	Mix_FreeChunk(someSound);
+	Mix_FreeMusic(music);
 	SDL_Quit();
 	return 0;
 
