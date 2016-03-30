@@ -38,4 +38,24 @@
     <None Include="vertex.glsl" />
     <None Include="fragment_textured.glsl" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="kyoukoATK1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="kyoukoATK2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="KYOUKOATK3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="kyoukoDIE.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="kyoukoIDLE.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="kyoukoRUN.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

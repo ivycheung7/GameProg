@@ -87,6 +87,14 @@
     <None Include="fragment_textured.glsl" />
     <None Include="vertex.glsl" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="kyoukoATK1.png" />
+    <Image Include="kyoukoATK2.png" />
+    <Image Include="KYOUKOATK3.png" />
+    <Image Include="kyoukoDIE.png" />
+    <Image Include="kyoukoIDLE.png" />
+    <Image Include="kyoukoRUN.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

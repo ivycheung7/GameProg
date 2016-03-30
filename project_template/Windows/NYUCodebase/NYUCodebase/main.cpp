@@ -19,12 +19,27 @@
 
 using namespace std;
 SDL_Window* displayWindow;
-#define MAX_BULLETS 30 
-#define ENEMY_MIN_X -2.75f
-#define ENEMY_MIN_Y -1.90f
-#define ENEMY_MAX_Y 1.90f
 #define FIXED_TIMESTEP 0.0166666f 
 #define MAX_TIMESTEPS 6
+#define LEVEL_HEIGHT 13
+#define LEVEL_WIDTH 10
+#define BLOCK_LENGTH 0.5f
+unsigned char level1Data[LEVEL_HEIGHT][LEVEL_WIDTH] = {	
+	{ 0, 0, 0, 0, 0, 6, 0, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 6, 6, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 6, 0, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 6, 0, 0, 0 },
+	{ 6, 6, 6, 6, 0, 0, 0, 6, 0, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 6, 0 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 6 },
+	{ 6, 6, 6, 6, 0, 0, 0, 0, 0, 6 }
+};
+
 
 GLuint LoadTexture(const char *image_path) {
 	SDL_Surface *surface = IMG_Load(image_path);
@@ -62,110 +77,232 @@ void DrawText(ShaderProgram *program, int fontTexture, std::string text, float s
 class Entity{
 public:
 	float x, y, height, width, speed, directionX, directionY;
+	bool collideTop, collideBottom, collideLeft, collideRight;
+	float velocity_x;   
+	float velocity_y;   
+	float acceleration_x;   
+	float acceleration_y;
+	//directionX is left/right
+	//directionY is down/up
 	Matrix matrix;
-	bool isAlive;
-	bool active; // on screen
+	bool isAlive; //Living player vs block
 	int textureID;
+	int spriteCountX, spriteCountY; 
+	bool isStatic; //static: no gravity, no movement, no collision checking
 	Entity(){}
 	void player(){
-		x = -2.9f;
-		y = -0.25f;
-		height = 1.5f;
-		width = 1.8f;
-		speed = 1.0f;
+		x = 0.0f;
+		y = 0.0f;
+		height = .75f;
+		width = 1.0f;
+		speed = 0.0f;
 		directionX = 0.0f;
 		directionY = 0.0f;
-		active = true;
+//		active = true;
 		isAlive = true;
-		textureID = LoadTexture("largeMagikarp.png");
+		textureID = LoadTexture("toilets.png");
+		spriteCountX = 7;
+		spriteCountY = 1;
+		isStatic = false;
+		collideTop = false;
+		collideBottom = false;
+		collideLeft = false;
+		collideRight = false;
+		velocity_x = 0;
+		velocity_y = 0;
+		acceleration_x = 0;
+		acceleration_y = 0;
 
 	}
-	void bullet(){
-		x = -5.0f;
-		y = -0.29;
-		height = 0.2f;
-		width = 0.4f;
-		speed = 1.0f;
-		directionX = 1.0f;
-		directionY = 0.0f;
-		active = false;
-		isAlive = true;
-		textureID = LoadTexture("sword.png");
-	}
-	void enemy(){
-		x = 2.00f;
-		y = 1.75f;
+
+	void blocks(float xPos, float yPos){
+		x = xPos;
+		y = yPos;
 		height = 0.5f;
 		width = 0.5f;
-		speed = 0.5f;
-		directionX = 0.0f;
-		directionY = -1.0f;
-		isAlive = true;
-		active = true;
-		textureID = LoadTexture("onigiri.png");
-	}
-	void updateImage(ShaderProgram * program, float* texVert){
-		if (active){
-			if (!isAlive){
-				//Dead so go off screen
-				active = false;
-			}
-			GLfloat vertices[] =
-			{
-				x - width / 2, y - height / 2,
-				x + width / 2, y - height / 2,
-				x + width / 2, y + height / 2,
-				x - width / 2, y - height / 2,
-				x + width / 2, y + height / 2,
-				x - width / 2, y + height / 2 //0,0
-			};
-
-			program->setModelMatrix(matrix);
-			glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
-			glEnableVertexAttribArray(program->positionAttribute);
-			glBindTexture(GL_TEXTURE_2D, textureID);
-
-			glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texVert);
-			glEnableVertexAttribArray(program->texCoordAttribute);
-
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-		}
-	}
-	//Entity(float a, float b, float h, float w, float s, float dX, float dY, bool onScreen, int id) :x(a), y(b), height(h), width(w), speed(s), directionX(dX), directionY(dY), active(onScreen), textureID(id){}
-	void died(ShaderProgram * program, float* texVert){
-		isAlive = false;
+		speed = 1.0f;
 		directionX = 0.0f;
 		directionY = 0.0f;
-		speed = 0.0f;
-		x = -6.0f;
-		updateImage(program, texVert);
+	//	active = true;
+		isStatic = true;
+		isAlive = false;
+		textureID = LoadTexture("goldblock.png");
+		collideTop = false;
+		collideBottom = false;
+		collideLeft = false;
+		collideRight = false;
+	}
+	void resetFlags(){
+		collideTop = false;
+		collideBottom = false;
+		collideLeft = false;
+		collideRight = false;
+	}
+	void updateImage(float texVert[],ShaderProgram * program){
+		GLfloat vertices[] =
+		{
+			x - width / 2, y - height / 2,
+			x + width / 2, y - height / 2,
+			x + width / 2, y + height / 2,
+			x - width / 2, y - height / 2,
+			x + width / 2, y + height / 2,
+			x - width / 2, y + height / 2
+		};
+		program->setModelMatrix(matrix);
+		glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
+		glEnableVertexAttribArray(program->positionAttribute);
+		glBindTexture(GL_TEXTURE_2D, textureID);
 
+		float texCoords[] = { 
+			0.0, 1.0, 
+			1.0, 1.0, 
+			1.0, 0.0, 
+			0.0, 1.0, 
+			1.0, 0.0, 
+			0.0, 0.0 
+		};
+
+		glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texVert);
+		glEnableVertexAttribArray(program->texCoordAttribute);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	
+	}
+	
+	//	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
+	//	glEnableVertexAttribArray(program->texCoordAttribute);
+
+	//	glBindTexture(GL_TEXTURE_2D, textureID);
+	//	glDrawArrays(GL_TRIANGLES, 0, 6);
+	//		//	return texCoords[];
+	//		//	float vertices[] = { -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f };
+	//		// our regular sprite drawing 
+
+	//	}
+	void DrawSpriteSheetSprite(ShaderProgram *program, int index) {
+		float u = (float)(((int)index) % spriteCountX) / (float)spriteCountX;
+		float v = (float)(((int)index) / spriteCountX) / (float)spriteCountY;
+		float spriteWidth = 1.0 / (float)spriteCountX;
+		float spriteHeight = 1.0 / (float)spriteCountY;
+
+		if (!directionX){
+			//If negativ and moving to the left side
+			GLfloat texCoords[] =
+			{
+				u, v + spriteHeight,
+				u + spriteWidth, v + spriteHeight,
+				u + spriteWidth, v,
+				u, v + spriteHeight,
+				u + spriteWidth, v,
+				u, v //0,0
+			};
+
+		}
+		GLfloat texCoords[] =
+		{
+			u, v + spriteHeight,
+			u + spriteWidth, v + spriteHeight,
+			u + spriteWidth, v,
+			u, v + spriteHeight,
+			u + spriteWidth, v,
+			u, v //0,0
+		};
+		float vertices[] = { 
+			x - width / 2, y - height / 2,
+			x + width / 2, y - height / 2,
+			x + width / 2, y + height / 2,
+			x - width / 2, y - height / 2,
+			x + width / 2, y + height / 2,
+			x - width / 2, y + height / 2
+		};
+
+		glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
+		glEnableVertexAttribArray(program->positionAttribute);
+
+		glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
+		glEnableVertexAttribArray(program->texCoordAttribute);
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+	}
+	void updateImage(ShaderProgram * program, int index, vector<Entity>entities){
+		for (Entity e : entities){
+			if (collidesWith(&e)){
+				//if there is a collision, check what kind it is
+		//		if (collideTop){
+		//			y -= fabs((y + height / 2) - (e.y - e.height / 2)) + .001f;
+		//		}
+				if (collideBottom){
+					y += (fabs((y - height / 2) - (e.y + e.height / 2))) + .001f;
+				}
+		//		else if (collideLeft){
+		//			x += fabs((x - width / 2) - (e.x + e.width / 2)) + .001f;
+		//		}
+		//		else if (collideRight){
+		//			x -= (fabs((x + width / 2) - (e.x - e.width / 2))) - .001f;
+		//		}
+			}
+		}
+		DrawSpriteSheetSprite(program, index);
+	}
+	bool collidesWith(Entity *entity){
+	//true if collision happened
+		//sets variables true or false
+		//Left side collision
+		/*if ((x + width/2) > (entity->x - entity->width/2)){
+			if (((y + height / 2) < (entity->y + height / 2) &&
+				((y + height / 2) > (entity->y - height / 2))) ||
+				((y - height / 2) > (entity->y - height / 2) &&
+				(y - height / 2) < (entity->y + height / 2))){
+				collideLeft = true;
+				return true;
+			}
+		}*/
+		//if ((x + width / 2) > (entity->x - entity->width / 2)){
+		//	//Right side collision
+		//	if (((y + height / 2) < (entity->y + height / 2) &&
+		//		((y + height / 2) > (entity->y - height / 2))) ||
+		//		((y - height / 2) > (entity->y - height / 2) &&
+		//		(y - height / 2) < (entity->y + height / 2))){
+		//		collideRight = true;
+		//		return true;
+		//	}
+		//}
+		if ((y - height/ 2) < (entity->y + entity->height/ 2)){
+			//Bottom collision
+			if (((x + width/ 2) < (entity->x + width/ 2) &&
+				((x + width/ 2) > (entity->x - width/ 2))) ||
+				((x - width / 2) > (entity->x - width / 2) &&
+				(x - width / 2) < (entity->x + width / 2))){
+					collideBottom = true;
+					return true;
+			}
+		}
+		//if ((y + height / 2) > (entity->y - entity->height / 2)){
+		//	//Top collision
+		//	if (((x + width / 2) < (entity->x + width / 2) &&
+		//		((x + width / 2) > (entity->x - width / 2))) ||
+		//		((x - width / 2) > (entity->x - width / 2) &&
+		//		(x - width / 2) < (entity->x + width / 2))){
+		//		collideRight = true;
+		//		return true;
+		//	}
+		//}
+		else{
+			collideTop = false;
+			collideBottom = false;
+			collideLeft = false;
+			collideRight = false;
+			return false;
+
+		}
 	}
 };
 
-
-//I was too lazy to make getX and setX methods that I decided to put functions in Entity instead
-//class Player : public Entity{
-//public:
-//	Player(float a = -2.9f, float b = -0.25, float h = 1.5f, float w = 1.8f, float s = 1.0f, float dX = 1.0f, float dY = 1.0f, bool onScreen = true, int id = LoadTexture("largemagikarp.png")) :Entity(a, b, h, w, s, dX, dY, onScreen, id){
-//
-//	}
-//};
-//
-//class Bullet : public Entity{
-//public:
-//	Bullet(float a = -5.0f, float b = -0.29f, float h = 0.2f, float w = 0.4f, float s = 1.0f, float dX = 1.0f, float dY = 1.0f, bool onScreen = false, int id = LoadTexture("sword.png")) :Entity(a, b, h, w, s, dX, dY, onScreen, id){
-//
-//	}
-//};
-//
-//class Enemy: public Entity{
-//public:
-//	Enemy(float a = 2.25f, float b = 1.75f, float h = 0.5f, float w = 0.5f, float s = 0.5f, float dX = 1.0f, float dY = -1.0f, bool onScreen = true, int id = LoadTexture("onigiri.png")) :Entity(a, b, h, w, s, dX, dY, onScreen, id){
-//
-//	}
-//};
-
+float lerp(float v0, float v1, float t)
+{
+	return (1.0f - t)*v0 + t*v1;
+}
 
 bool collision(Entity* l, Entity* r){
 	if (l->y - l->height / 2 < r->y + r->height / 2 && l->y + l->height / 2 > r->y - r->height / 2 &&
@@ -173,66 +310,22 @@ bool collision(Entity* l, Entity* r){
 		return true;
 	return false;
 }
-
-void DrawSpriteSheetSprite(ShaderProgram *program, int index, int spriteCountX, int spriteCountY, float vertices[], GLuint texture) {
-
-	float u = (float)(((int)index) % spriteCountX) / (float)spriteCountX;
-	float v = (float)(((int)index) / spriteCountX) / (float)spriteCountY;
-	float spriteWidth = 1.0 / (float)spriteCountX;
-	float spriteHeight = 1.0 / (float)spriteCountY;
-
-	GLfloat texCoords[] =
-	{
-		u, v + spriteHeight,
-		u + spriteWidth, v + spriteHeight,
-		u + spriteWidth, v,
-		u, v + spriteHeight,
-		u + spriteWidth, v,
-		u, v //0,0
-	};
-
-	glVertexAttribPointer(program->positionAttribute, 2, GL_FLOAT, false, 0, vertices);
-	glEnableVertexAttribArray(program->positionAttribute);
-
-	glVertexAttribPointer(program->texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
-	glEnableVertexAttribArray(program->texCoordAttribute);
-
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//	return texCoords[];
-	//	float vertices[] = { -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f };
-	// our regular sprite drawing 
-
-}
-
-void setup(){
+int main(int argc, char *argv[])
+{
 	SDL_Init(SDL_INIT_VIDEO);
-	displayWindow = SDL_CreateWindow("PokeInvaders", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 400, SDL_WINDOW_OPENGL);
+	displayWindow = SDL_CreateWindow("HW5", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 360, SDL_WINDOW_OPENGL);
 	SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
 	SDL_GL_MakeCurrent(displayWindow, context);
 #ifdef _WINDOWS
 	glewInit();
 #endif
-
-	glViewport(0, 0, 640, 400);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	glClearColor(0.0f, 0.3f, 0.5f, 1.0f);
 
-}
-
-
-void processEvents(){
 	SDL_Event event;
-}
-void update(){
-}
-void render(){
-}
-int main(int argc, char *argv[])
-{
-	setup();
+	bool done = false;
+
 
 	ShaderProgram program(RESOURCE_FOLDER"vertex_textured.glsl", RESOURCE_FOLDER"fragment_textured.glsl");
 	glUseProgram(program.programID);
@@ -242,184 +335,91 @@ int main(int argc, char *argv[])
 	Matrix viewMatrix;
 	Matrix startMenu;
 
-	GLuint mainChar = LoadTexture("largeMagikarp.png");
-	GLuint phone = LoadTexture("sword.png");
-	GLuint trainers = LoadTexture("trainers1.png");
-	GLuint font = LoadTexture("font1.png");
-	GLuint onigiri = LoadTexture("onigiri.png");
-	//	GLuint bg = LoadTexture("bg.png");
-
-	float verticesP1[] = { -3.8f, -1.0f, -2.0f, -1.0f, -2.0f, 0.5f, -3.8f, -1.0f, -2.0f, 0.5f, -3.8f, 0.5f };
-	float bulletVert[] = { -0.5f, -0.5f,
-		-0.1f, -0.5f,
-		-0.1f, -0.3f,
-		-0.5f, -0.5f,
-		-0.1f, -0.3f,
-		-0.5f, -0.3f
-	};
-
-	float verticesP2[] = { 2.0f, 1.5f,
-		2.5f, 1.5f,
-		2.5f, 2.0f,
-		2.0f, 1.5f,
-		2.5f, 2.0f,
-		2.0f, 2.0f
-	};
-	float startPos[] = { -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f };
-	float texCoords[] = { 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0 };
-
-	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
-	//Frequency, format, channels, chunksize
-	
-	//Loading sound
-	//Mix_Chunk *someSound; 
-	//someSound = Mix_LoadWAV("some_sound.wav"); // Loading a sound.
-
-	//Mix_PlayChannel(-1, someSound, 0);
-	//Channel, chunk, loop
-
-	Mix_Music *music;
-	music = Mix_LoadMUS("johncena.wav");
-	//The time is now
-	Mix_PlayMusic(music, -1);
-
-	//Player
-	Entity magikarp;
-	magikarp.player();
-
-	//Enemies
-	vector<Entity> enemies;
-	int rowE = 6;
-	int columnE = 6;
-	float space = 0.35f; //space between enemies
-	float xDiff = 0.0f;
-	float yDiff = 0.0f;
-
-	//Set up grid
-	for (int i = 0; i < rowE; i++){
-		yDiff = space * i;
-		for (int j = 0; j < columnE; j++){
-			xDiff = space* j;
-			Entity e;
-			e.enemy();
-			e.y -= yDiff;
-			e.x += xDiff;
-			enemies.push_back(e);
-		}
-	}
-
-	//Bullets
-	vector<Entity>bullets;
-	for (int i = 0; i < MAX_BULLETS; i++){
-		Entity b;
-		b.bullet();
-		bullets.push_back(b);
-	}
-	float lastFrameTicks = 0.0f;
-	const Uint8 *keys = SDL_GetKeyboardState(NULL);
-	bool done = false;
-
 	Matrix projectionMatrix;
 	projectionMatrix.setOrthoProjection(-3.55, 3.55, -2.0f, 2.0f, -1.0f, 1.0f);
-	SDL_Event event;
+
+	Entity toilet;
+	toilet.player();
+	vector<Entity> entities;
+	Entity block1;
+	block1.blocks(0.0f, -1.5f);
+	Entity block2;
+	block2.blocks(0.5f, -1.5f);
+	Entity block3;
+	block3.blocks(1.0f, -1.5f);
+	entities.push_back(block1);
+	entities.push_back(block2);
+	entities.push_back(block3);
+	float friction_x = .5f;
+	float friction_y = .1f;
+	//float verticesP1[] = { -3.5f, -1.0f, -2.0f, -1.0f, -2.0f, 0.25f, -3.5f, -1.0f, -2.0f, 0.25f, -3.5f, 0.25f };
+	float verticesP1[] = { -1.5f, -1.0f, 0.0f, -1.0f, 0.0f, 0.25f, -1.5f, -1.0f, 0.0f, 0.25f, -1.5f, 0.25f };
+	float texCoords[] = { 0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0 };
 	//int winner = 0;
-	const int runAnimation[] = { 0, 1, 2, 12, 13, 14, 24, 25, 26, 36, 37, 38 };
+	const int runAnimation[] = { 0, 1, 2, 3, 4, 5, 6 };
 	//{3,4,5, 15,16,17, 27,28,29, 39,40,41}
 	//{6,7,8, 18,19,20, 30,31,32, 42,43,45}
-	const int numFrames = 12;
+	const int numFrames = 7;
 	float animationElapsed = 0.0f;
 	float framesPerSecond = 30.0f;
 	int currentIndex = 0;
-	Matrix magikarpMatrix;
-	Matrix gameMatrix;
-	Matrix textMatrix;
-	Matrix surprise;
-	Matrix gameOver;
-	Matrix win;
-	int startScreen = 0;
-
+	float lastFrameTicks = 0.0f;
+	const Uint8 *keys = SDL_GetKeyboardState(NULL);
+	std::vector<float> vertexData;
+	std::vector<float> texCoordData;         
+	for (int y = 0; y < LEVEL_HEIGHT; y++) {
+		for (int x = 0; x < LEVEL_WIDTH; x++) { 
+			if (level1Data[y][x] == 6) {          
+				//if 6, put block
+				Entity block1;
+				block1.blocks(y * BLOCK_LENGTH, x * BLOCK_LENGTH);
+				entities.push_back(block1);
+			} 
+		} 
+	}
+	
 	while (!done) {
-
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glEnableVertexAttribArray(program.positionAttribute);
-		glEnableVertexAttribArray(program.texCoordAttribute);
+		program.setModelMatrix(modelMatrix);
 		program.setProjectionMatrix(projectionMatrix);
 		program.setViewMatrix(viewMatrix);
 
-		if (startScreen == 0)
-		{
-			program.setModelMatrix(startMenu);
-			//DrawText(&program, font, "Ready Player One:", .3f, 0.0f); //Reference to book Ready Player One
-			DrawText(&program, font, "Press Space to Start", .2f, 0.0f);
-			startMenu.setPosition(-2.50f, -1.0f, 0.0f);
+		//glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, verticesP1);
+		glEnableVertexAttribArray(program.positionAttribute);
+		glEnableVertexAttribArray(program.texCoordAttribute);
+		//glBindTexture(GL_TEXTURE_2D, kyoukoIDLE);
+		//startMenu.setScale(4, 4, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-			program.setModelMatrix(textMatrix);
-			DrawText(&program, font, "Press B for food", .2f, 0.0f);
-			startMenu.setPosition(-2.50f, -1.0f, 0.0f);
+		float ticks = (float)SDL_GetTicks() / 1000;
+		float elapsed = ticks - lastFrameTicks;
+		lastFrameTicks = ticks;
 
-			while (SDL_PollEvent(&event)) {
-				if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-					done = true;
-				}
-				if (keys[SDL_SCANCODE_SPACE]){
-					startScreen = 1;
-				}
-				if (keys[SDL_SCANCODE_B]){
-					startScreen = 10;
-				}
-			}
+		float fixedElapsed = elapsed;
+		if (fixedElapsed > FIXED_TIMESTEP * MAX_TIMESTEPS) {
+			fixedElapsed = FIXED_TIMESTEP * MAX_TIMESTEPS;
 		}
-		else if (startScreen == 10){
-
-			glClear(GL_COLOR_BUFFER_BIT);
-			program.setModelMatrix(surprise);
-			program.setProjectionMatrix(projectionMatrix);
-			program.setViewMatrix(viewMatrix);
-
-			glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, startPos);
-			glEnableVertexAttribArray(program.positionAttribute);
-
-			glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
-			glEnableVertexAttribArray(program.texCoordAttribute);
-			glBindTexture(GL_TEXTURE_2D, onigiri);
-			surprise.setScale(4, 4, 0);
-			glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
-
-			while (SDL_PollEvent(&event)) {
-				if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-					done = true;
-				}
-				if (keys[SDL_SCANCODE_SPACE]){
-					startScreen = 1;
-				}
-				if (keys[SDL_SCANCODE_B]){
-					startScreen = 10;
-				}
-			}
-
+		while (fixedElapsed >= FIXED_TIMESTEP) {
+			fixedElapsed -= FIXED_TIMESTEP;
 		}
-		else if (startScreen == 1){
+
+		toilet.velocity_x += toilet.acceleration_x *FIXED_TIMESTEP;
+		toilet.velocity_y -= .01f * elapsed;
+		toilet.x += toilet.velocity_x * FIXED_TIMESTEP;
+		toilet.y += toilet.velocity_y *FIXED_TIMESTEP;
+		
+		toilet.matrix.Translate(toilet.velocity_x* FIXED_TIMESTEP, toilet.velocity_x* FIXED_TIMESTEP, 0.0f);
+
+		for (Entity e : entities){
+			e.updateImage(texCoords, &program);
+		};
 
 
-			processEvents();
-			update();
-			render();
+		//DrawSpriteSheetSprite(&program, runAnimation[currentIndex], 7, 1, verticesP1, toilet);
+		viewMatrix.setPosition(-toilet.x, -toilet.y, 0);
 
-			float ticks = (float)SDL_GetTicks() / 7000.0;
-			float elapsed = ticks - lastFrameTicks;
-			lastFrameTicks = ticks;
-
-			float fixedElapsed = elapsed;
-			if (fixedElapsed > FIXED_TIMESTEP * MAX_TIMESTEPS) {
-				fixedElapsed = FIXED_TIMESTEP * MAX_TIMESTEPS;
-			}
-			while (fixedElapsed >= FIXED_TIMESTEP) {
-				fixedElapsed -= FIXED_TIMESTEP;
-			}
-
+		if (keys[SDL_SCANCODE_A]) {
 			animationElapsed += fixedElapsed;
 			if (animationElapsed > 1.0 / framesPerSecond) {
 				currentIndex++;
@@ -428,162 +428,49 @@ int main(int argc, char *argv[])
 					currentIndex = 0;
 				}
 			}
-
-
-			//	DrawSpriteSheetSprite(&program, runAnimation[currentIndex], 12, 12, verticesP2, trainers);
-
-
-			program.setModelMatrix(modelMatrix);
-			program.setViewMatrix(viewMatrix);
-			program.setProjectionMatrix(projectionMatrix);
-
-			magikarp.updateImage(&program, texCoords);
-			int numDead = 0;
-
-			//Enemies
-			for (int i = 0; i < rowE*columnE; i++){
-				if (enemies[i].isAlive){
-					//If enemy is alive ...
-					float distance = 0.5f * fixedElapsed * framesPerSecond;
-					enemies[i].x -= distance / 5;
-					//Constantly move to the left
-					if (enemies[i].directionY > 0.0f){
-						//If you're moving upward
-						if (enemies[i].y + distance < ENEMY_MAX_Y){
-							enemies[i].y += distance;
-						}
-						else{
-							//Turn around
-							enemies[i].directionY = -1.0f;
-						}
-					}
-					else if (enemies[i].directionY < 0.0f){
-						//Moving down
-						if (enemies[i].y + distance > ENEMY_MIN_Y){
-							enemies[i].y -= distance;
-						}
-						else{
-							//180 noscope
-							enemies[i].directionY = 1.0f;
-						}
-					}
-					if (enemies[i].x - distance < ENEMY_MIN_X){
-						startScreen = -1; // Game Over
-					}
-					if (collision(&magikarp, &enemies[i])){
-						startScreen = -1;
-					}
-					for (int j = 0; j < MAX_BULLETS; j++){
-						if (collision(&enemies[i], &bullets[j])){
-							enemies[i].died(&program, texCoords);
-							bullets[j].died(&program, texCoords);
-						}
-					}
-					enemies[i].updateImage(&program, texCoords);
-				}
-				else{
-					numDead++;
-				}
-				if (numDead == rowE*columnE){
-					startScreen = -2; //You win
+			toilet.x -= framesPerSecond * fixedElapsed / 5;
+			toilet.updateImage(&program, runAnimation[currentIndex], entities);
+		}
+		else if (keys[SDL_SCANCODE_D]) {
+			animationElapsed += fixedElapsed;
+			if (animationElapsed > 1.0 / framesPerSecond) {
+				currentIndex++;
+				animationElapsed = 0.0;
+				if (currentIndex > numFrames - 1) {
+					currentIndex = 0;
 				}
 			}
+			toilet.x += framesPerSecond * fixedElapsed / 5;
+			toilet.updateImage(&program, runAnimation[currentIndex], entities);
+		}
+		else{
+			currentIndex = 4;
+			toilet.updateImage(&program, runAnimation[currentIndex], entities);
+		}
+		//else if (keys[SDL_SCANCODE_D]) {
+		//	if (toilet.x + (framesPerSecond * fixedElapsed) < 1.50f){
+		//		toilet.x += framesPerSecond * fixedElapsed;
+		//		//	magikarp.matrix.Translate(0, -framesPerSecond * elapsed, 0);
+		//	}
+		//}
 
-
-
-			//Bullets
-			for (int i = 0; i < bullets.size(); i++){
-				float distance = fixedElapsed * framesPerSecond; //Bullet speed is 1.0f unless not active
-				if (bullets[i].active){
-					if (bullets[i].x + distance > 5.0f){
-						//Bullet leaves screen
-						bullets[i].died(&program, texCoords);
-					}
-					bullets[i].x += distance;
-					bullets[i].updateImage(&program, texCoords);
-					for (int j = 0; j < enemies.size(); j++){
-						if (collision(&bullets[i], &enemies[j])){
-							//Bullet collide with enemy
-							enemies[j].died(&program, texCoords);
-							bullets[i].died(&program, texCoords);
-						}
-					}
-				}
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+				done = true;
 			}
-
-
-			/*	for (int i = 0; i < 16; i++){
-			enemies[i].updateImage(&program, texCoords);
-			}
-			*/	//food.updateImage(&program, texCoords);
-
-			program.setModelMatrix(gameMatrix);
-
-			DrawSpriteSheetSprite(&program, runAnimation[currentIndex], 12, 12, verticesP2, trainers);
-			//Random moving sprite to fulfill requirement. I wanted to make the enemies moving sprites ._.
-
-			if (keys[SDL_SCANCODE_W]) {
-				if (magikarp.y + (framesPerSecond * fixedElapsed) < 1.50f){
-					magikarp.y += framesPerSecond * fixedElapsed;
-					//	magikarp.matrix.Translate(0, framesPerSecond * elapsed, 0);
-				}
-
-			}
-			else if (keys[SDL_SCANCODE_S]) {
-				if (magikarp.y - (framesPerSecond * fixedElapsed) > -1.50f){
-					magikarp.y -= framesPerSecond * fixedElapsed;
-					//	magikarp.matrix.Translate(0, -framesPerSecond * elapsed, 0);
-				}
-			}
-
-			while (SDL_PollEvent(&event)) {
-				if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-					done = true;
-				}
-				if (keys[SDL_SCANCODE_SPACE]){
-					for (int i = 0; i < MAX_BULLETS; i++){
-						if (bullets[i].active == false){
-							bullets[i].active = true;
-							bullets[i].isAlive = true;
-							bullets[i].x = magikarp.x + 0.75f;
-							bullets[i].y = magikarp.y;
-							bullets[i].updateImage(&program, texCoords);
-							i += MAX_BULLETS;
-						}
-					}
-				}
+			/*
+			if (keys[SDL_SCANCODE_W] && toilet.collideBottom){
+				toilet.y += framesPerSecond * FIXED_TIMESTEP;
+				toilet.updateImage(&program, runAnimation[currentIndex], entities);
+			}*/
+			if (keys[SDL_SCANCODE_W]){
+				toilet.y += framesPerSecond * FIXED_TIMESTEP;
+				toilet.updateImage(&program, runAnimation[currentIndex], entities);
 			}
 		}
-		else if (startScreen == -1){
-
-			program.setModelMatrix(gameOver);
-			DrawText(&program, font, "You lost!", .3f, 0.0f);
-			startMenu.setPosition(-2.50f, -1.0f, 0.0f);
-			while (SDL_PollEvent(&event)) {
-				if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-					done = true;
-				}
-			}
-		}
-		else if (startScreen == -2){
-
-			program.setModelMatrix(win);
-			DrawText(&program, font, "You win!", .3f, 0.0f);
-			startMenu.setPosition(-2.50f, -1.0f, 0.0f);
-			while (SDL_PollEvent(&event)) {
-				if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
-					done = true;
-				}
-			}
-		}
-
+		//	glClear(GL_COLOR_BUFFER_BIT);
 		SDL_GL_SwapWindow(displayWindow);
 	}
-
-//	Mix_FreeChunk(someSound);
-	Mix_FreeMusic(music);
 	SDL_Quit();
 	return 0;
-
 }
-
